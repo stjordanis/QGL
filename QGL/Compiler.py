@@ -305,14 +305,11 @@ def compile_to_hardware(seqs,
                         library_version=None,
                         suffix='',
                         axis_descriptor=None,
-                        qgl2=False,
-                        addQGL2SlaveTrigger=False,
-                        edgesToCompile = None,
-                        qubitToCompile = None,
                         meas_qs = None,
                         meas_decoupled_qs = None,
                         CR_chs = None,
-                        CR_decoupled_chs = None):
+                        CR_decoupled_chs = None,
+                        addSlaveTrigger=True):
     '''
     Compiles 'seqs' to a hardware description and saves it to 'fileName'.
     Other inputs:
@@ -338,6 +335,7 @@ def compile_to_hardware(seqs,
 
     # add decoupling pulses
     PatternUtils.decouple_seqs(seqs, meas_qs, meas_decoupled_qs, CR_chs, CR_decoupled_chs)
+    save_code(seqs, fileName + suffix)
 
     # all sequences should start with a WAIT for synchronization
     for seq in seqs:
