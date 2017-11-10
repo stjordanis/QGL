@@ -309,7 +309,7 @@ def compile_to_hardware(seqs,
                         meas_decoupled_qs = None,
                         CR_chs = None,
                         CR_decoupled_chs = None,
-                        addSlaveTrigger=True):
+                        add_slave_trigger=True):
     '''
     Compiles 'seqs' to a hardware description and saves it to 'fileName'.
     Other inputs:
