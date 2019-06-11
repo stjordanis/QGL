@@ -587,7 +587,7 @@ class ChannelLibrary(object):
         else:
             raise ValueError("In set_measure the Transmitter must have a single quadrature channel or a specific channel must be passed instead")
 
-        meas.receiver_chan = rcv_chan
+        meas.receiver_chans += [rcv_chan]
         self.add_and_update_dict([meas, trig_chan])
 
         if gate:
