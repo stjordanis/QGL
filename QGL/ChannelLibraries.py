@@ -155,8 +155,69 @@ class ChannelLibrary(object):
         else:
             return q
 
+    def show2(self, qubit):
+        indices   = {}
+        node_data = []
+        link_data = []
+        locs = {}
+        q = qubit
+
+        node_f = lambda n, c: node_data.append({'label': str(n).replace('(','\r\n('), 'obj': n, 'color': c})
+        link_f = lambda s, t, i: link_data.append({'source': i[s], 'target': i[t]})
+
+        for el in [q, q.measure_chan]:
+            indices[el] = max(indices.values())+1 if len(indices) > 0 else 0
+            node_f(el, "lightblue")
+        for el in [q.measure_chan.phys_chan, q.measure_chan.phys_chan.transmitter, q.phys_chan, q.phys_chan.transmitter]:
+            indices[el] = max(indices.values())+1 if len(indices) > 0 else 0
+            node_f(el, "orange")
+        if q.measure_chan.phys_chan.generator:
+            indices[q.measure_chan.phys_chan.generator] = max(indices.values())+1
+            node_f(q.measure_chan.phys_chan.generator, "orange")
+        if q.phys_chan.generator:
+            indices[q.phys_chan.generator] = max(indices.values())+1
+            node_f(q.phys_chan.generator, "orange")
+
+        w = 0.6
+        locs[q]                                    = (w,0)
+        locs[q.phys_chan]                          = (w,1)
+        locs[q.phys_chan.transmitter]              = (w,2)
+        locs[q.measure_chan]                       = (-w,0)
+        locs[q.measure_chan.phys_chan]             = (-w,1)
+        locs[q.measure_chan.phys_chan.transmitter] = (-w,2)
+
+        for i, rc in enumerate(q.measure_chan.receiver_chans):
+            indices[rc] = max(indices.values())+1
+            node_f(rc, "orange")
+            locs[rc] = (-w*(i+1),-1)
+            link_f(q.measure_chan, rc, indices)
+
+        link_f(q.measure_chan,q.measure_chan.phys_chan, indices)
+        link_f(q.measure_chan.phys_chan,q.measure_chan.phys_chan.transmitter, indices)
+        if q.measure_chan.phys_chan.generator:
+            link_f(q.measure_chan.phys_chan,q.measure_chan.phys_chan.generator, indices)
+            locs[q.measure_chan.phys_chan.generator] = (-w,3)
+
+        link_f(q,q.phys_chan, indices)
+        link_f(q.phys_chan,q.phys_chan.transmitter, indices)
+        if q.phys_chan.generator:
+            link_f(q.phys_chan,q.phys_chan.generator, indices)
+            locs[q.phys_chan.generator] = (w,3)
+        
+        x, y = [locs[n['obj']][0] for n in node_data], [locs[n['obj']][1] for n in node_data]
+        colors = [n['color'] for n in node_data]
+        xs = LinearScale(min=min(x)-0.5, max=max(x)+0.6)
+        ys = LinearScale(min=min(y)-0.5, max=max(y)+0.6)
+        node_data = [{'label': n['label']} for n in node_data]
+        fig_layout = Layout(width='960px', height='500px')
+        bq_graph   = Graph(node_data=node_data, link_data=link_data, x=x, y=y, scales={'x': xs, 'y': ys},
+                            link_type='line', colors=colors, directed=False)
+
+        fig        = Figure(marks=[bq_graph], layout=fig_layout)
+        return fig
+
+
     def show(self, qubits=[]):
-        # nodes     = list(dgraph.nodes())
         edges = []
         qub_objs = qubits if not qubits == [] else self.qubits()
         for q in qub_objs:
