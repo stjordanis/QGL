@@ -496,8 +496,9 @@ def compile_to_hardware(seqs,
         }]
     receiver_measurements = {}
     for wire, n in wire_measurements.items():
-        if wire.receiver_chan and n>0:
-            receiver_measurements[wire.receiver_chan.label] = n
+        if (len(wire.receiver_chans)>0) and n>0:
+            for rc in wire.receiver_chans:
+                receiver_measurements[rc.label] = n
     meta = {
         'database_info': db_info,
         'instruments': files,
@@ -506,7 +507,8 @@ def compile_to_hardware(seqs,
         'axis_descriptor': axis_descriptor,
         'qubits': [c.label for c in channels if isinstance(c, Channels.Qubit)],
         'measurements': [c.label for c in channels if isinstance(c, Channels.Measurement)],
-        'receivers': receiver_measurements
+        'receivers': receiver_measurements,
+
     }
     if extra_meta:
         meta.update({'extra_meta': extra_meta})
