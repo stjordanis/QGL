@@ -99,6 +99,7 @@ def plot_pulse_files(metafile, time=True, backend='bqplot'):
 
     elif backend=='bqplot':
         from bqplot import DateScale, LinearScale, Axis, Lines, Figure, Tooltip
+        from bqplot.toolbar import Toolbar
         from bqplot.colorschemes import CATEGORY10, CATEGORY20
         from ipywidgets import interact, IntSlider, VBox
         sx = LinearScale()
@@ -126,7 +127,8 @@ def plot_pulse_files(metafile, time=True, backend='bqplot'):
                 line.y = dat['y']
         slider.observe(segment_changed, 'value')
         fig = Figure(marks=lines, axes=[ax, ay], title='Waveform Plotter',animation_duration=50)
-        return VBox([slider, fig])
+        toolb = Toolbar(figure=fig)
+        return VBox([slider, fig, toolb])
 
 
 def extract_waveforms(fileNames, nameDecorator='', time=False):
