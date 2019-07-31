@@ -508,7 +508,7 @@ def compile_to_hardware(seqs,
         'qubits': [c.label for c in channels if isinstance(c, Channels.Qubit)],
         'measurements': [c.label for c in channels if isinstance(c, Channels.Measurement)],
         'receivers': receiver_measurements,
-
+        'edges': [c.label for c in channels if isinstance(c, Channels.Edge)]
     }
     if extra_meta:
         meta.update({'extra_meta': extra_meta})
