@@ -7,24 +7,39 @@ import numpy as np
 from collections.abc import Iterable
 from itertools import product
 
-def StarkSpectroscopy(qubit, measurement, amplitude, 
+def StarkSpectroscopy(qubit, measurement, amplitude,
                             delay=200e-9, length=1e-6, showPlot=False):
-    """Stark shift spectroscopy experiment. Applies a coherent displacement
-        to the qubit readout cavity while doing pulsed spectroscopy.
+    """
+    Stark shift spectroscopy experiment. Applies a coherent displacement
+    to the qubit readout cavity while doing pulsed spectroscopy.
 
-        Args:
-            qubit: Qubit channel to apply spectroscopy pulse to.
+    Parameters
+    ----------
+    qubit : Channels.LogicalChannel
+        Logical channel for the control qubit
+    measurement : bbndb.qgl.Measurement
+        Measurement channel to apply displacement pulse to
+    amplitude : float
+        Amplitude of the measurement pulse. Valid range: [0.0, 1.0].
+    delay : float, optional
+        Delay between end of spectroscopy pulse and start of MEAS (seconds)
+    lengths : int/float, optional
+        Total length of cavity displacement pulse (seconds).  4 ns minimum.
+    showPlot : boolean, optional
+        Whether to plot
 
-            measurement: Measurement channel to apply displacement pulse to.
+    Returns
+    -------
+    metafile : string
+        Path to a json metafile with details about the sequences and paths
+        to compiled machine files.
 
-            amplitude: Measurement pulse amplitude(s)
-
-            delay: Delay between end of spectroscopy pulse and start of MEAS(qubit).
-
-            length: Total length of cavity displacement pulse.
-
-        Returns:
-            metafile: Path to compiled sequence metafile.
+    Examples
+    --------
+    >>> mf = StarkSpectroscopy(q1, q1.measure_chan, np.linspace(0.6, 0.8, 51));
+    Compiled 51 sequences.
+    >>> mf
+    '/path/to/exp/exp-meta.json'
     """
 
     if not isinstance(amplitude, Iterable):
@@ -50,29 +65,47 @@ def StarkSpectroscopy(qubit, measurement, amplitude,
 
     return metafile
 
-def StarkEcho(qubit, measurement, amplitudes, delays, 
+def StarkEcho(qubit, measurement, amplitudes, delays,
                             wait=200e-9, periods=4, showPlot=False):
-    """Hahn echo sequence with a coherent displacement of the qubit measurement cavity.
-        Used to measure photon-induced dephasing. This sequence can cause a lot of cache pressure
-        so number of points may be limited.
+    """
+    Hahn echo sequence with a coherent displacement of the qubit measurement
+    cavity. Used to measure photon-induced dephasing. This sequence can cause
+    a lot of cache pressure so number of points may be limited.
 
-        TODO: Use QGL intrinsics to reduce sequence and memory cache utilization.
+    TODO: Use QGL intrinsics to reduce sequence and memory cache utilization.
 
-        Args:
-            qubit: Qubit channel for Hahn echo.
+    Parameters
+    ----------
+    qubit : Channels.LogicalChannel
+        Logical channel for the Hahn echo
+    measurement : bbndb.qgl.Measurement
+        Measurement channel of the qubit
+    amplitude : int/float iterable
+        Amplitude(s) of cavity displacement pulse. Valid range: [0.0, 1.0].
+    delays : int/float iterable
+        Delay between end of spectroscopy pulse and start of MEAS (seconds)
+    wait : int/float, optional
+        Hahn echo delays - the t in 90-t-180-t-180 (seconds)
+        (seconds).  4 ns minimum.
+    periods : int, optional
+        Number of artificial oscillations
+    showPlot : boolean, optional
+        Whether to plot
 
-            measurement: Measurement channel of qubit.
-            
-            amplitudes: Amplitude(s) of cavity displacement pulse. 
+    Returns
+    -------
+    metafile : string
+        Path to a json metafile with details about the sequences and paths
+        to compiled machine files.
 
-            delays: Hahn echo delays - the t in 90-t-180-t-180. 
-
-            wait: Delay between end of cavity displacement pulse and start of MEAS(qubit).
-
-            periods: Number of artificial oscillations.
-
-        Returns:
-            metafile: Path to compiled sequence metafile.
+    Examples
+    --------
+    >>> mf = StarkEcho(q1, q1.measure_chan,
+                       np.linspace(0.6, 0.8, 10),
+                       np.linspace(20.0e-9, 200.02e-6, 10));
+    Compiled 210 sequences.
+    >>> mf
+    '/path/to/exp/exp-meta.json'
     """
 
     if not isinstance(amplitudes, Iterable):
@@ -87,7 +120,7 @@ def StarkEcho(qubit, measurement, amplitudes, delays,
     def echo_stark(n, amp, max_delay, meas_delay=200e-9):
         x_len = qubit.pulse_params["length"]
         max_len = 3*x_len + 2*max_delay + meas_delay
-        echo_wait = max_len - (3*x_len + 2*delays[n]) 
+        echo_wait = max_len - (3*x_len + 2*delays[n])
 
         echo_seq = Id(qubit, echo_wait) + X90(qubit) + Id(qubit, delays[n]) + \
                         Y(qubit) + Id(qubit, delays[n]) + U90(qubit, echo_phase(n))
@@ -97,7 +130,7 @@ def StarkEcho(qubit, measurement, amplitudes, delays,
         return echo_seq*meas_seq
 
 
-    seqs = [[echo_stark(n, amp, np.max(delays)), Id(measurement, length=wait), MEAS(qubit)] 
+    seqs = [[echo_stark(n, amp, np.max(delays)), Id(measurement, length=wait), MEAS(qubit)]
                 for n, amp in product(range(len(delays)), amplitudes)]
 
     axis_descriptor = [delay_descriptor(delays)] * len(amplitudes)
@@ -110,27 +143,46 @@ def StarkEcho(qubit, measurement, amplitudes, delays,
     return metafile
 
 
-def CavityPumpProbe(qubit, measurement, offsets, amplitude, 
-                            length=1e-6, wait=1e-6, showPlot=False):
-    """Time resolved cavity spectroscopy. Applies a coherent displacement to qubit
-        readout cavity while sweeping qubit spectroscopy pulse delay. Useful to measure
-        cavity kappa and cavity population.
+def CavityPumpProbe(qubit, measurement, offsets, amplitude,
+                            length=1e-6, wait=2e-6, showPlot=False):
+    """
+    Time resolved cavity spectroscopy. Applies a coherent displacement to qubit
+    readout cavity while sweeping qubit spectroscopy pulse delay. Useful to
+    measure cavity kappa and cavity population.
 
-        Args:
-            qubit: Qubit channel for spectroscopy.
+    Parameters
+    ----------
+    qubit : Channels.LogicalChannel
+        Logical channel for the Hahn echo
+    measurement : bbndb.qgl.Measurement
+        Measurement channel of the qubit
+    offsets : int/float iterable
+        Spectroscopy pulse offset relative to start of cavity displacement
+        pulse (seconds)
+    amplitude : int/float iterable
+        Amplitude(s) of cavity displacement pulse. Valid range: [0.0, 1.0].
+    length : int/float, optional
+        Total length of cavity displacement pulse (seconds)
+    wait : int/float, optional
+        Delay between end of cavity displacement pulse and start of measurement
+        (seconds).  4 ns minimum.
+    showPlot : boolean, optional
+        Whether to plot
 
-            measurement: Measurement channel of qubit.
-            
-            offsets: Spectroscopy pulse offset relative to start of cavity displacement pulse.
+    Returns
+    -------
+    metafile : string
+        Path to a json metafile with details about the sequences and paths
+        to compiled machine files.
 
-            amplitude: Measurement pulse amplitude.
-
-            length: Total length of cavity displacement pulse.
-
-            wait: Delay between end of cavity displacement pulse and start of MEAS(qubit).
-
-        Returns:
-            metafile: Path to compiled sequence metafile.
+    Examples
+    --------
+    >>> mf = CavityPumpProbe(q1, q1.measure_chan,
+                       np.linspace(20.0e-9, 200.02e-6, 10),
+                       0.6);
+    Compiled 210 sequences.
+    >>> mf
+    '/path/to/exp/exp-meta.json'
     """
 
     if not isinstance(offsets, Iterable):
@@ -162,6 +214,3 @@ def CavityPumpProbe(qubit, measurement, offsets, amplitude,
         plot_pulse_files(metafile)
 
     return metafile
-
-
-
