@@ -81,14 +81,14 @@ def read_aps1_from_h5(fileName):
         channels = list(FID['/'].keys())
         data['channels'] = {}
         for channel in channels:
-            data['channels'][channel] = {'waveformLib': FID[f'/{channel}/waveformLib'].value.flatten()}
+            data['channels'][channel] = {'waveformLib': FID[f'/{channel}/waveformLib'][()].flatten()}
             data['channels'][channel]['isIQMode'] = FID[f'/{channel}'].attrs['isIQMode']
             if 'linkListData' in list(FID[f'/{channel}'].keys()):
                 data['channels'][channel]['linkListData'] = {}
                 for key in FID[f'/{channel}/linkListData'].keys():
                     data['channels'][channel]['linkListNumKeys'] = len(FID[f'/{channel}/linkListData'].keys())
                     data['channels'][channel]['linkListDataLength'] = FID[f'/{channel}/linkListData'].attrs['length']
-                    data['channels'][channel]['linkListData'][key] = FID[f'/{channel}/linkListData/{key}'].value.flatten()
+                    data['channels'][channel]['linkListData'][key] = FID[f'/{channel}/linkListData/{key}'][()].flatten()
     return data
 
 if __name__ == '__main__':
