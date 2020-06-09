@@ -66,9 +66,9 @@ def read_aps2_from_h5(fileName):
         data["instrument"]   = FID['/'].attrs['target hardware']
         data["file_version"] = FID["/"].attrs["Version"]
         data["fw_version"]   = FID['/'].attrs['minimum firmware version']
-        data["chan1"]        = FID['/chan_1/waveforms'].value.flatten()
-        data["chan2"]        = FID['/chan_2/waveforms'].value.flatten()
-        data["instructions"] = FID['/chan_1/instructions'].value.flatten()
+        data["chan1"]        = FID['/chan_1/waveforms'][()].flatten()
+        data["chan2"]        = FID['/chan_2/waveforms'][()].flatten()
+        data["instructions"] = FID['/chan_1/instructions'][()].flatten()
     return data
 
 def read_aps1_from_h5(fileName):
